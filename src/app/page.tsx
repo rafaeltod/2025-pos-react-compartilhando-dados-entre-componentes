@@ -1,69 +1,85 @@
 "use client";
 
-import type React from "react";
-
-import { useEffect, useState } from "react";
-import dados, { TarefaInterface } from "@/data";
+import React, { useState } from "react";
+import dados, { TarefaInterface } from "@/data";  // Importando os dados e a interface
 import Cabecalho from "@/componentes/Cabecalho";
+import ModalTarefa from "@/componentes/ModalTarefa";
 
-interface TarefaProps {
-	titulo: string;
-	concluido?: boolean;
-}
+// Componente para exibir uma tarefa
+const Tarefa: React.FC<{ titulo: string; concluido?: boolean; id: number; onToggle: (id: number) => void }> = ({ titulo, concluido, id, onToggle }) => {
+  const classeCard = `p-3 mb-3 rounded-lg shadow-md hover:cursor-pointer hover:border ${
+    concluido ? "bg-gray-800 hover:border-gray-800" : "bg-gray-400 hover:border-gray-400"
+  }`;
 
-const Tarefa: React.FC<TarefaProps> = ({ titulo, concluido }) => {
-	const [estaConcluido, setEstaConcluido] = useState(concluido);
+  const classeCorDoTexto = concluido ? "text-amber-50" : "";
 
-	const classeCard = `p-3 mb-3 rounded-lg shadow-md hover:cursor-pointer hover:border ${
-		estaConcluido
-			? "bg-gray-800 hover:border-gray-800"
-			: "bg-gray-400 hover:border-gray-400"
-	}`;
-
-	const classeCorDoTexto = estaConcluido ? "text-amber-50" : "";
-
-	const escutarClique = () => {
-		console.log(`A tarefa '${titulo}' foi clicada!`);
-		setEstaConcluido(!estaConcluido);
-	};
-
-	return (
-		<div className={classeCard} onClick={() => escutarClique()}>
-			<h3 className={`text-xl font-bold ${classeCorDoTexto}`}>{titulo}</h3>
-			<p className={`text-sm ${classeCorDoTexto}`}>
-				{estaConcluido ? "Concluída" : "Pendente"}
-			</p>
-		</div>
-	);
+  return (
+    <div className={classeCard} onClick={() => onToggle(id)}>
+      <h3 className={`text-xl font-bold ${classeCorDoTexto}`}>{titulo}</h3>
+      <p className={`text-sm ${classeCorDoTexto}`}>{concluido ? "Concluída" : "Pendente"}</p>
+    </div>
+  );
 };
 
-interface TareafasProps {
-	dados: TarefaInterface[];
-}
-
-const Tarefas: React.FC<TareafasProps> = ({ dados }) => {
-	return (
-		<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-			{dados.map((tarefa) => (
-				<Tarefa
-					key={tarefa.id}
-					titulo={tarefa.title}
-					concluido={tarefa.completed}
-				/>
-			))}
-		</div>
-	);
+// Componente para listar todas as tarefas
+const Tarefas: React.FC<{ tarefas: TarefaInterface[]; onToggle: (id: number) => void }> = ({ tarefas, onToggle }) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {tarefas.map((tarefa) => (
+        <Tarefa
+          key={tarefa.id}
+          id={tarefa.id}
+          titulo={tarefa.title}
+          concluido={tarefa.completed}
+          onToggle={onToggle}
+        />
+      ))}
+    </div>
+  );
 };
 
-const Home = () => {
-	const tarefas: TarefaInterface[] = dados;
+// Componente principal da página Home
+const Home: React.FC = () => {
+  const [tarefas, setTarefas] = useState<TarefaInterface[]>(dados);
+  const [showModal, setShowModal] = useState<boolean>(false);
 
-	return (
-		<div className="container mx-auto p-4">
-			<Cabecalho />
-			<Tarefas dados={tarefas} />
-		</div>
-	);
+  // Função para alternar o estado de conclusão de uma tarefa
+  const toggleConcluida = (id: number) => {
+    setTarefas((prevTarefas) =>
+      prevTarefas.map((tarefa) =>
+        tarefa.id === id ? { ...tarefa, completed: !tarefa.completed } : tarefa
+      )
+    );
+  };
+
+  // Função para adicionar nova tarefa
+  const handleAddTarefa = (newTarefa: TarefaInterface) => {
+    setTarefas((prevTarefas) => [...prevTarefas, newTarefa]);
+  };
+
+  // Função para mostrar o modal
+  const handleShowModal = () => {
+    setShowModal(true);
+  };
+
+  // Função para fechar o modal
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+  return (
+    <div className="container mx-auto p-4">
+      <Cabecalho onShowModal={handleShowModal} />
+      <Tarefas tarefas={tarefas} onToggle={toggleConcluida} />
+
+      {showModal && (
+        <ModalTarefa
+          onClose={handleCloseModal}
+          onAddTarefa={handleAddTarefa}
+        />
+      )}
+    </div>
+  );
 };
 
 export default Home;
